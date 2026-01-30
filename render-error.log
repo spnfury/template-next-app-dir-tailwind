@@ -1,0 +1,12 @@
+[2026-01-30T01:47:18.814Z] Rendering failed: The browser threw an error while playing the video /yt-videos/video-1769737582590-0.mp4: Code 4 - MEDIA_ELEMENT_ERROR: Format error. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.
+Stack: Error: The browser threw an error while playing the video /yt-videos/video-1769737582590-0.mp4: Code 4 - MEDIA_ELEMENT_ERROR: Format error. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.
+    at HTMLVideoElement.errorHandler (http://localhost:3002/bundle.js:24815:15)
+
+[2026-01-30T01:47:40.680Z] Rendering failed: The browser threw an error while playing the video /yt-videos/video-1769737582590-0.mp4: Code 4 - MEDIA_ELEMENT_ERROR: Format error. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.
+Stack: Error: The browser threw an error while playing the video /yt-videos/video-1769737582590-0.mp4: Code 4 - MEDIA_ELEMENT_ERROR: Format error. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.
+    at HTMLVideoElement.errorHandler (http://localhost:3002/bundle.js:24815:15)
+
+[2026-01-30T01:49:26.670Z] Rendering failed: The browser threw an error while playing the video file:///Users/sergirodriguezzambrana/remotion_app/public/yt-videos/video-1769737727971-0.mp4: Code 4 - MEDIA_ELEMENT_ERROR: Media load rejected by URL safety check. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.
+Stack: Error: The browser threw an error while playing the video file:///Users/sergirodriguezzambrana/remotion_app/public/yt-videos/video-1769737727971-0.mp4: Code 4 - MEDIA_ELEMENT_ERROR: Media load rejected by URL safety check. See https://remotion.dev/docs/media-playback-error for help. Pass an onError() prop to handle the error.
+    at HTMLVideoElement.errorHandler (http://localhost:3002/bundle.js:24815:15)
+

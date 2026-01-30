@@ -12,6 +12,7 @@ export const Scene: React.FC<SceneProps & { showNarration?: boolean }> = ({
     text: defaultText,
     imageUrl,
     videoUrl,
+    videoStartFrame,
     voiceUrl,
     showNarration,
     subtitles
@@ -32,9 +33,10 @@ export const Scene: React.FC<SceneProps & { showNarration?: boolean }> = ({
                     <Video
                         src={videoUrl}
                         className="w-full h-full object-cover opacity-80"
-                        muted // Only narration and music should be heard
+                        muted
+                        startFrom={videoStartFrame || 0}
                     />
-                ) : (
+                ) : imageUrl ? (
                     <Img
                         src={imageUrl}
                         className="w-full h-full object-cover opacity-80"
@@ -42,7 +44,7 @@ export const Scene: React.FC<SceneProps & { showNarration?: boolean }> = ({
                             filter: "blur(2px) contrast(1.1)",
                         }}
                     />
-                )}
+                ) : null}
             </AbsoluteFill>
 
             {/* Dark Overlay */}

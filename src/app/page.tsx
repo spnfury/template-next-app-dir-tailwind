@@ -13,9 +13,11 @@ const Home: NextPage = () => {
   const [useOriginalBackground, setUseOriginalBackground] = useState(false);
   const [showMusic, setShowMusic] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [producing, setProducing] = useState(false);
   const [rendering, setRendering] = useState(false);
   const [renderUrl, setRenderUrl] = useState<string | null>(null);
   const [videoProps, setVideoProps] = useState<ViralVideoProps>(defaultViralVideoProps);
+  const [draft, setDraft] = useState<any>(null);
 
   const totalDuration = useMemo(() => {
     return videoProps.scenes.reduce((acc, scene) => acc + scene.durationInFrames, 0);
@@ -27,6 +29,7 @@ const Home: NextPage = () => {
 
     setLoading(true);
     setRenderUrl(null);
+    setDraft(null);
     try {
       const endpoint = mode === "prompt" ? "/api/generate" : "/api/generate-from-shorts";
       const body = mode === "prompt"
@@ -45,13 +48,43 @@ const Home: NextPage = () => {
       if (data.error) {
         alert(data.error);
       } else {
-        setVideoProps(data);
+        if (mode === "youtube") {
+          setDraft(data);
+        } else {
+          setVideoProps(data);
+        }
       }
     } catch (error) {
       console.error(error);
       alert("Failed to generate video");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProduce = async () => {
+    if (!draft) return;
+    setProducing(true);
+    try {
+      const response = await fetch("/api/produce", {
+        method: "POST",
+        body: JSON.stringify({
+          ...draft,
+          showMusic
+        }),
+      });
+      const data = await response.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        setVideoProps(data);
+        setDraft(null); // Clear draft once produced
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error produciendo el video final");
+    } finally {
+      setProducing(false);
     }
   };
 
@@ -233,6 +266,70 @@ const Home: NextPage = () => {
               ))}
             </div>
           </div>
+
+          {/* Draft Editor Section */}
+          {draft && (
+            <div className="pt-8 border-t border-zinc-800 space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  📝 Editar Guión Producido
+                </h3>
+                <span className="text-xs text-zinc-500 bg-zinc-800 px-3 py-1 rounded-full uppercase">Borrador</span>
+              </div>
+
+              <div className="space-y-6">
+                {draft.scenes.map((scene: any, i: number) => (
+                  <div key={i} className="p-5 bg-black/40 rounded-2xl border border-zinc-800 space-y-4">
+                    <div className="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase">
+                      <span className="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+                        {i + 1}
+                      </span>
+                      {scene.sectionTitle || "Escena"}
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] text-zinc-500 uppercase font-black mb-1 block">Texto Visual (Subtítulos)</label>
+                        <input
+                          type="text"
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:ring-1 focus:ring-purple-500 outline-none"
+                          value={scene.text}
+                          onChange={(e) => {
+                            const newScenes = [...draft.scenes];
+                            newScenes[i].text = e.target.value;
+                            setDraft({ ...draft, scenes: newScenes });
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-zinc-500 uppercase font-black mb-1 block">Texto Hablado (Narración IA)</label>
+                        <textarea
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-sm text-white focus:ring-1 focus:ring-purple-500 outline-none h-20 resize-none"
+                          value={scene.spokenText}
+                          onChange={(e) => {
+                            const newScenes = [...draft.scenes];
+                            newScenes[i].spokenText = e.target.value;
+                            setDraft({ ...draft, scenes: newScenes });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={handleProduce}
+                disabled={producing}
+                className="w-full py-4 bg-white text-black rounded-2xl font-black text-lg hover:bg-zinc-200 transition-all disabled:opacity-50"
+              >
+                {producing ? "Produciendo voces y video..." : "✨ Finalizar y Producir"}
+              </button>
+              <p className="text-[10px] text-zinc-500 text-center">
+                Esto generará la narración final y sincronizará los subtítulos.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Player */}

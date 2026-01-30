@@ -4,6 +4,7 @@ import { ViralVideoProps } from "../../../types/viral-video";
 import { MUSIC_LIBRARY } from "../../../types/music-library";
 import fs from "fs";
 import path from "path";
+import { generateFishAudio } from "../../../lib/fish-audio";
 
 // Simulación de conector para Qwen3-TTS
 const QWEN3_TTS_URL = process.env.QWEN3_TTS_URL;
@@ -14,18 +15,20 @@ async function generateAudio(text: string, index: number, openai: OpenAI) {
     const fileName = `voice-${Date.now()}-${index}.mp3`;
     const filePath = path.join(voiceDir, fileName);
 
-    if (QWEN3_TTS_URL) {
-        // Placeholder para integración futura con Qwen3-TTS
+    try {
+        await generateFishAudio(text, filePath);
+    } catch (error) {
+        console.error("Fish Audio failed in simple generate, falling back to OpenAI:", error);
+        // Fallback a OpenAI TTS
+        const mp3 = await openai.audio.speech.create({
+            model: "tts-1",
+            voice: "alloy",
+            input: text,
+        });
+        const buffer = Buffer.from(await mp3.arrayBuffer());
+        fs.writeFileSync(filePath, new Uint8Array(buffer));
     }
 
-    // Fallback a OpenAI TTS
-    const mp3 = await openai.audio.speech.create({
-        model: "tts-1",
-        voice: "alloy",
-        input: text,
-    });
-    const buffer = Buffer.from(await mp3.arrayBuffer());
-    fs.writeFileSync(filePath, new Uint8Array(buffer));
     return `/voice/${fileName}`;
 }
 
@@ -53,13 +56,19 @@ export async function POST(request: Request) {
                 {
                     role: "system",
                     content: `Eres un experto en videos virales. Crea un guion en ESPAÑOL para un video de 15 segundos.
+          
+          REGLAS DE TONO:
+          - Usa mucho HUMOR.
+          - Debes decir la palabra "BRO" en cada una de las escenas.
+          - El tono debe ser divertido y muy de 'influencer' viral.
+
           La respuesta DEBE ser un objeto JSON que coincida con este esquema:
           {
             "musicThemeName": "Uno de: ${musicOptions}",
             "scenes": [
               {
-                "text": "texto visual corto",
-                "spokenText": "guion completo hablado para esta escena",
+                "text": "texto visual corto y gracioso",
+                "spokenText": "guion hablado con HUMOR y diciendo 'BRO' en esta escena",
                 "imageUrl": "https://loremflickr.com/1080/1920/{keyword}",
                 "subtitles": [
                   { "text": "grupo de 2-3 palabras", "startFrame": 0, "endFrame": 30 }
@@ -88,7 +97,7 @@ export async function POST(request: Request) {
         const aiResponse = JSON.parse(content);
         const selectedMusic = MUSIC_LIBRARY.find(m => m.name === aiResponse.musicThemeName) || MUSIC_LIBRARY[0];
 
-        const processedScenes = await Promise.Praball(aiResponse.scenes.map(async (scene: any, index: number) => {
+        const processedScenes = await Promise.all(aiResponse.scenes.map(async (scene: any, index: number) => {
             const voiceUrl = await generateAudio(scene.spokenText, index, openai);
 
             // Calculamos la duración total de la escena basándonos en el último subtítulo
