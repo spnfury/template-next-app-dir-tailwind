@@ -1,10 +1,10 @@
 import { AbsoluteFill, Series, Audio } from "remotion";
-import { ViralVideoProps } from "../../../types/viral-video";
+import { ViralVideoProps } from "../../types/viral-video";
 import { Scene } from "./Scene";
 
 export const ViralVideo: React.FC<ViralVideoProps> = ({ scenes, musicUrl }) => {
     return (
-        <AbsoluteFill>
+        <AbsoluteFill className="bg-black">
             {musicUrl && <Audio src={musicUrl} />}
             <Series>
                 {scenes.map((scene, index) => (
@@ -12,7 +12,7 @@ export const ViralVideo: React.FC<ViralVideoProps> = ({ scenes, musicUrl }) => {
                         key={index}
                         durationInFrames={scene.durationInFrames}
                     >
-                        <Scene {...scene} />
+                        <Scene {...scene} showNarration={scenes.length > 0} />
                     </Series.Sequence>
                 ))}
             </Series>

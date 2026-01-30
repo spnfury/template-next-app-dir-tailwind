@@ -1,36 +1,113 @@
 import { NextResponse } from "next/server";
-import { ViralVideoProps } from "@/types/viral-video";
+import OpenAI from "openai";
+import { ViralVideoProps } from "../../../types/viral-video";
+import { MUSIC_LIBRARY } from "../../../types/music-library";
+import fs from "fs";
+import path from "path";
 
-// This is a mock for now, later we can integrate with OpenAI
+// Simulación de conector para Qwen3-TTS
+const QWEN3_TTS_URL = process.env.QWEN3_TTS_URL;
+
+async function generateAudio(text: string, index: number, openai: OpenAI) {
+    const voiceDir = path.resolve("public/voice");
+    if (!fs.existsSync(voiceDir)) fs.mkdirSync(voiceDir, { recursive: true });
+    const fileName = `voice-${Date.now()}-${index}.mp3`;
+    const filePath = path.join(voiceDir, fileName);
+
+    if (QWEN3_TTS_URL) {
+        // Placeholder para integración futura con Qwen3-TTS
+    }
+
+    // Fallback a OpenAI TTS
+    const mp3 = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: "alloy",
+        input: text,
+    });
+    const buffer = Buffer.from(await mp3.arrayBuffer());
+    fs.writeFileSync(filePath, new Uint8Array(buffer));
+    return `/voice/${fileName}`;
+}
+
 export async function POST(request: Request) {
     try {
-        const { prompt } = await request.json();
+        const { prompt, showMusic } = await request.json();
 
         if (!prompt) {
             return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
         }
 
-        // Mock AI response for now to get things moving
-        // In a real app, you'd call OpenAI here
-        const videoProps: ViralVideoProps = {
-            scenes: [
+        if (!process.env.OPENAI_API_KEY) {
+            return NextResponse.json({ error: "OpenAI API Key is missing. Please add it to .env" }, { status: 500 });
+        }
+
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+
+        const musicOptions = MUSIC_LIBRARY.map(m => m.name).join(", ");
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
                 {
-                    text: `Viral Fact about: ${prompt}`,
-                    imageUrl: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=1080&auto=format&fit=crop",
-                    durationInFrames: 90,
+                    role: "system",
+                    content: `Eres un experto en videos virales. Crea un guion en ESPAÑOL para un video de 15 segundos.
+          La respuesta DEBE ser un objeto JSON que coincida con este esquema:
+          {
+            "musicThemeName": "Uno de: ${musicOptions}",
+            "scenes": [
+              {
+                "text": "texto visual corto",
+                "spokenText": "guion completo hablado para esta escena",
+                "imageUrl": "https://loremflickr.com/1080/1920/{keyword}",
+                "subtitles": [
+                  { "text": "grupo de 2-3 palabras", "startFrame": 0, "endFrame": 30 }
+                ]
+              }
+            ]
+          }
+          - Usa 3-4 escenas.
+          - IMPORTANTE: Idioma ESPAÑOL.
+          - 'subtitles' debe dividir 'spokenText' en fragmentos cortos sincronizados.
+          - Asume 30fps. Estima los frames basándote en que hablamos a unas 150 palabras por minuto (~2.5 palabras por segundo -> 12 frames por palabra).
+          - Ajusta los frames de los subtítulos secuencialmente dentro de cada escena.
+          - imageUrl debe usar keywords en inglés (ej: 'landscape', 'luxury').`,
                 },
                 {
-                    text: "Did you count the pages?",
-                    imageUrl: "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1080&auto=format&fit=crop",
-                    durationInFrames: 90,
-                },
-                {
-                    text: "Knowledge is power!",
-                    imageUrl: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1080&auto=format&fit=crop",
-                    durationInFrames: 120,
+                    role: "user",
+                    content: prompt,
                 },
             ],
-            musicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+            response_format: { type: "json_object" },
+        });
+
+        const content = completion.choices[0].message.content;
+        if (!content) throw new Error("No content from OpenAI");
+
+        const aiResponse = JSON.parse(content);
+        const selectedMusic = MUSIC_LIBRARY.find(m => m.name === aiResponse.musicThemeName) || MUSIC_LIBRARY[0];
+
+        const processedScenes = await Promise.Praball(aiResponse.scenes.map(async (scene: any, index: number) => {
+            const voiceUrl = await generateAudio(scene.spokenText, index, openai);
+
+            // Calculamos la duración total de la escena basándonos en el último subtítulo
+            const lastSub = scene.subtitles[scene.subtitles.length - 1];
+            const durationInFrames = lastSub ? lastSub.endFrame : 90;
+
+            return {
+                text: scene.text,
+                imageUrl: scene.imageUrl,
+                durationInFrames,
+                voiceUrl,
+                subtitles: scene.subtitles,
+            };
+        }));
+
+        const videoProps: ViralVideoProps = {
+            scenes: processedScenes,
+            musicUrl: showMusic ? selectedMusic.url : undefined,
+            showNarration: true,
         };
 
         return NextResponse.json(videoProps);

@@ -7,8 +7,10 @@ import {
   VIDEO_FPS,
   VIDEO_HEIGHT,
   VIDEO_WIDTH,
-} from "../../types/constants";
+} from "../types/constants";
 import { NextLogo } from "./MyComp/NextLogo";
+import { ViralVideo } from "./ViralVideo/Main";
+import { defaultViralVideoProps, ViralVideoSchema } from "../types/viral-video";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -21,6 +23,16 @@ export const RemotionRoot: React.FC = () => {
         width={VIDEO_WIDTH}
         height={VIDEO_HEIGHT}
         defaultProps={defaultMyCompProps}
+      />
+      <Composition
+        id="ViralVideo"
+        component={ViralVideo}
+        durationInFrames={300} // Default duration, will be overridden by props if needed
+        fps={30}
+        width={1080}
+        height={1920}
+        schema={ViralVideoSchema}
+        defaultProps={defaultViralVideoProps}
       />
       <Composition
         id="NextLogo"

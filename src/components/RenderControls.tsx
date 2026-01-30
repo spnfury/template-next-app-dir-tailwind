@@ -7,7 +7,7 @@ import { ErrorComp } from "./Error";
 import { Input } from "./Input";
 import { ProgressBar } from "./ProgressBar";
 import { Spacing } from "./Spacing";
-import { COMP_NAME, CompositionProps } from "../../types/constants";
+import { COMP_NAME, CompositionProps } from "../types/constants";
 import { useRendering } from "../helpers/use-rendering";
 
 export const RenderControls: React.FC<{
@@ -20,8 +20,8 @@ export const RenderControls: React.FC<{
   return (
     <InputContainer>
       {state.status === "init" ||
-      state.status === "invoking" ||
-      state.status === "error" ? (
+        state.status === "invoking" ||
+        state.status === "error" ? (
         <>
           <Input
             disabled={state.status === "invoking"}

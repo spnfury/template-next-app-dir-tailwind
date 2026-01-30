@@ -1,31 +1,31 @@
 import { z } from "zod";
 import { useCallback, useMemo, useState } from "react";
 import { getProgress, renderVideo } from "../lambda/api";
-import { CompositionProps } from "../../types/constants";
+import { CompositionProps } from "../types/constants";
 
 export type State =
   | {
-      status: "init";
-    }
+    status: "init";
+  }
   | {
-      status: "invoking";
-    }
+    status: "invoking";
+  }
   | {
-      renderId: string;
-      bucketName: string;
-      progress: number;
-      status: "rendering";
-    }
+    renderId: string;
+    bucketName: string;
+    progress: number;
+    status: "rendering";
+  }
   | {
-      renderId: string | null;
-      status: "error";
-      error: Error;
-    }
+    renderId: string | null;
+    status: "error";
+    error: Error;
+  }
   | {
-      url: string;
-      size: number;
-      status: "done";
-    };
+    url: string;
+    size: number;
+    status: "done";
+  };
 
 const wait = async (milliSeconds: number) => {
   await new Promise<void>((resolve) => {
